@@ -61,7 +61,7 @@ Single wave - sequential tasks with dependencies
 
 Wave 1: Git Init → .gitignore → Clean Duplicates → Stage → Push → Test
 
-## TODOs
+- ## TODOs
 - [x] 1. Create proper .gitignore and clean git staging
 - [x] 2. Test Docker Compose
 - [x] 3. Verify all files exist
