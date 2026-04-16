@@ -41,22 +41,26 @@ async def agent_websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
-            
+
             if message.get("type") == "diagnose":
                 query = message.get("query", "")
                 result = await process_diagnose(query)
                 await manager.send_message(json.dumps(result), websocket)
             else:
-                await manager.send_message(json.dumps({"type": "echo", "data": data}), websocket)
+                await manager.send_message(
+                    json.dumps({"type": "echo", "data": data}), websocket
+                )
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception as e:
-        await manager.send_message(json.dumps({"type": "error", "message": str(e)}), websocket)
+        await manager.send_message(
+            json.dumps({"type": "error", "message": str(e)}), websocket
+        )
 
 
 async def process_diagnose(query: str):
-    from agent.graph import compiled_graph
-    
+    from engine.graph import compiled_graph
+
     init_state = {
         "queries": [query],
         "analyses": [],

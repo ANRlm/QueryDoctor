@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from agent.state import AgentState
+from engine.state import AgentState
 
 
 def format_node(state: AgentState) -> AgentState:
@@ -12,7 +12,7 @@ def format_output(state: AgentState) -> Dict[str, Any]:
     analyses = state.get("analyses", [])
     diagnosis = state.get("diagnosis", "")
     suggestions = state.get("suggestions", [])
-    
+
     return {
         "queries": queries,
         "analyses": analyses,

@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 FROM python:3.12-slim
 
-WORKDIR /app
+WORKDIR /app/agent
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -21,6 +21,8 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 COPY . .
+
+ENV PYTHONPATH=/app/agent
 
 EXPOSE 8000
 

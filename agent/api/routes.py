@@ -2,10 +2,10 @@ from fastapi import FastAPI, WebSocket, Depends, Body
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
-from agent.api.auth import login, register_user, get_current_user, TokenData
-from agent.api.rag_api import router as rag_router
-from agent.api.websocket import websocket_endpoint, agent_websocket_endpoint
-from agent.graph.graph import compiled_graph
+from api.auth import login, register_user, get_current_user, TokenData
+from api.rag_api import router as rag_router
+from api.websocket import websocket_endpoint, agent_websocket_endpoint
+from engine.graph import compiled_graph
 
 app = FastAPI(title="QueryDoctor Agent")
 
