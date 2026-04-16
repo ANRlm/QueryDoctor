@@ -1,9 +1,10 @@
 package handler
 
 import (
+	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,7 +20,27 @@ func Diagnose(c *gin.Context) {
 		return
 	}
 
-	agentReq, err := http.NewRequest("POST", agentURL+"/diagnose", strings.NewReader(`{"query":"`+req.Query+`"}`))
+	proxyToAgent(c, req.Query, "postgresql")
+}
+
+func DiagnoseSSE(c *gin.Context) {
+	query := c.Query("query")
+	if query == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "query parameter required"})
+		return
+	}
+	dbType := c.DefaultQuery("db_type", "postgresql")
+	proxyToAgent(c, query, dbType)
+}
+
+func proxyToAgent(c *gin.Context, query, dbType string) {
+	body, err := json.Marshal(map[string]string{"query": query, "db_type": dbType})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to build request"})
+		return
+	}
+
+	agentReq, err := http.NewRequest("POST", agentURL+"/diagnose", bytes.NewReader(body))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create request"})
 		return

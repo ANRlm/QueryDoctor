@@ -19,30 +19,31 @@ export interface SSEResponse {
   data: Record<string, unknown>
 }
 
-export function createEventSource(url: string, onMessage: (data: SSEResponse) => void) {
+export function createEventSource(
+  url: string,
+  onMessage: (data: Record<string, unknown>) => void,
+  onDone?: () => void,
+) {
   const eventSource = new EventSource(url)
 
   eventSource.onmessage = (event) => {
     try {
-      const data = JSON.parse(event.data) as SSEResponse
+      const data = JSON.parse(event.data) as Record<string, unknown>
+      if (data.type === 'done') {
+        eventSource.close()
+        onDone?.()
+        return
+      }
       onMessage(data)
     } catch (e) {
       console.error('Failed to parse SSE message:', e)
     }
   }
 
-  eventSource.addEventListener('ping', (event) => {
-    try {
-      const data = JSON.parse((event as MessageEvent).data) as SSEResponse
-      onMessage(data)
-    } catch (e) {
-      console.error('Failed to parse ping message:', e)
-    }
-  })
-
   eventSource.onerror = (error) => {
     console.error('SSE error:', error)
     eventSource.close()
+    onDone?.()
   }
 
   return eventSource

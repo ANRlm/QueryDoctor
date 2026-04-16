@@ -18,6 +18,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	router.Use(middleware.Logging())
 
 	router.GET("/health", handler.HealthCheck)
+	router.GET("/api/diagnose", handler.DiagnoseSSE)
 
 	var cacheHandler *handler.CacheHandler
 	if cfg.Redis.Addr != "" {

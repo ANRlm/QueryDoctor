@@ -1,3 +1,5 @@
+import json
+
 from fastapi import FastAPI, WebSocket, Depends, Body
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
@@ -14,6 +16,7 @@ app.include_router(rag_router)
 
 class DiagnoseRequest(BaseModel):
     query: str
+    db_type: str = "postgresql"
 
 
 @app.get("/health")
@@ -31,6 +34,7 @@ async def diagnose(request: DiagnoseRequest):
     async def event_stream():
         init_state = {
             "queries": [request.query],
+            "db_type": request.db_type,
             "analyses": [],
             "diagnosis": None,
             "suggestions": [],
@@ -71,6 +75,3 @@ async def ws_endpoint(websocket: WebSocket):
 @app.websocket("/ws/agent")
 async def ws_agent_endpoint(websocket: WebSocket):
     await agent_websocket_endpoint(websocket)
-
-
-import json

@@ -43,7 +43,7 @@ QueryDoctor/
 │   └── internal/     # 内部包
 ├── agent/            # Python Agent 引擎
 │   ├── api/         # API 路由
-│   ├── agent/       # LangGraph Agent
+│   ├── engine/      # LangGraph Agent
 │   └── rag/         # RAG 知识库
 ├── frontend/         # React 前端项目
 │   ├── src/
@@ -64,7 +64,7 @@ QueryDoctor/
 
 - Node.js 18+
 - Go 1.21+
-- Python 3.10+
+- Python 3.12+
 - Redis
 
 ### 本地开发

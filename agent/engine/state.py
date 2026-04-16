@@ -3,6 +3,7 @@ from typing import TypedDict, Optional, List, Any, Dict
 
 class AgentState(TypedDict):
     queries: List[str]
+    db_type: str
     collected: List[Any]
     analyses: List[str]
     diagnosis: Optional[str]

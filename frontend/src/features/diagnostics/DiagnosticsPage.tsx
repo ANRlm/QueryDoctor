@@ -4,7 +4,7 @@ import { Button } from '../../components/ui/Button'
 import { Card, GlassCard } from '../../components/ui/Card'
 import { TextArea } from '../../components/ui/Input'
 import { useDiagnosticsStore } from '../../store/useDiagnosticsStore'
-import { createEventSource, SSEResponse } from '../../services/apiClient'
+import { createEventSource } from '../../services/apiClient'
 import { Loader2 } from 'lucide-react'
 
 const dbTypes = [
@@ -28,20 +28,47 @@ export function DiagnosticsPage() {
     setLoading(true)
     setStreaming(true)
 
-    const es = createEventSource(`/api/diagnose?query=${encodeURIComponent(query)}`, (data: SSEResponse) => {
-      addResult({
-        id: String(data.id),
-        type: data.type,
-        data: data.data as { status?: string; query?: string; stage?: string; diagnosis?: string; suggestions?: string[] },
-      })
-    })
+    const url = `/api/diagnose?query=${encodeURIComponent(query)}&db_type=${selectedDb}`
+
+    const es = createEventSource(
+      url,
+      (chunk: Record<string, unknown>) => {
+        if (chunk.analyze) {
+          const { analyses } = chunk.analyze as { analyses: string[] }
+          if (analyses?.length > 0) {
+            addResult({
+              id: String(Date.now()),
+              type: 'analyze',
+              data: { stage: '执行计划分析', diagnosis: analyses.join('\n') },
+            })
+          }
+        } else if (chunk.diagnose) {
+          const { diagnosis } = chunk.diagnose as { diagnosis: string }
+          if (diagnosis) {
+            addResult({
+              id: String(Date.now()),
+              type: 'diagnose',
+              data: { stage: '诊断结论', diagnosis },
+            })
+          }
+        } else if (chunk.suggest) {
+          const { suggestions } = chunk.suggest as { suggestions: string[] }
+          if (suggestions?.length > 0) {
+            addResult({
+              id: String(Date.now()),
+              type: 'suggest',
+              data: { stage: '优化建议', suggestions },
+            })
+          }
+        }
+      },
+      () => {
+        setLoading(false)
+        setStreaming(false)
+      },
+    )
 
     setEventSource(es)
-
-    setTimeout(() => {
-      setLoading(false)
-      setStreaming(false)
-    }, 5000)
   }
 
   const handleStop = () => {
