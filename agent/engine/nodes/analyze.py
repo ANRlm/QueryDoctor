@@ -1,3 +1,4 @@
+import re
 from typing import List, Dict, Any
 from engine.state import AgentState
 
@@ -13,25 +14,58 @@ def analyze_node(state: AgentState) -> AgentState:
     return {**state, "analyses": analyses}
 
 
+def analyze_sql_static(query: str) -> List[str]:
+    issues = []
+    q = query.upper()
+
+    if re.search(r"SELECT\s+\*", q):
+        issues.append("使用了 SELECT *，建议明确指定所需列")
+
+    if re.search(r"\bYEAR\s*\(|\bMONTH\s*\(|\bDATE\s*\(|\bDATE_FORMAT\s*\(", q):
+        issues.append("WHERE 子句对日期列使用函数（如 YEAR()），导致索引失效；建议改用范围条件")
+
+    if re.search(r"\bLOWER\s*\(|\bUPPER\s*\(", q):
+        issues.append("WHERE 子句对列使用大小写函数（LOWER/UPPER），导致索引失效")
+
+    if re.search(r"LIKE\s+'%", q):
+        issues.append("LIKE '%...' 使用了前置通配符，B-tree 索引无法生效，将导致全表扫描")
+
+    join_count = len(re.findall(r"\bJOIN\b", q))
+    if join_count > 0:
+        issues.append(f"包含 {join_count} 个 JOIN，请确认关联列上存在索引")
+
+    if re.search(r"\bORDER\s+BY\b", q):
+        issues.append("包含 ORDER BY，若排序列无索引支持将产生额外排序开销")
+
+    if re.search(r"\bGROUP\s+BY\b", q):
+        issues.append("包含 GROUP BY，若分组列无索引支持将使用临时表")
+
+    return issues
+
+
 def analyze_explain(item: Dict[str, Any]) -> str:
     query = item.get("query", "")
     explain = item.get("explain", [])
     db_type = item.get("db_type", "postgresql")
     tables = item.get("tables", [])
 
+    static_issues = analyze_sql_static(query)
+
     if not explain:
+        if static_issues:
+            return "静态分析 (无执行计划): " + "; ".join(static_issues)
         return f"无法获取查询计划: {query}"
 
-    analysis_parts = []
-
     if db_type == "mysql":
-        analysis = analyze_mysql_explain(explain, tables)
+        explain_analysis = analyze_mysql_explain(explain, tables)
     else:
-        analysis = analyze_pg_explain(explain, tables)
+        explain_analysis = analyze_pg_explain(explain, tables)
 
-    analysis_parts.append(analysis)
+    parts = [explain_analysis]
+    if static_issues:
+        parts.append("静态分析补充: " + "; ".join(static_issues))
 
-    return "\n".join(analysis_parts)
+    return "\n".join(parts)
 
 
 def analyze_mysql_explain(explain: List[Dict], tables: List[str]) -> str:
