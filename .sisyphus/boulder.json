@@ -1,0 +1,12 @@
+{
+  "active_plan": "/Users/cnhyk/QueryDoctor/.sisyphus/plans/querydoctor-p1-redis.md",
+  "started_at": "2026-04-16T18:01:50.887Z",
+  "session_ids": [
+    "ses_268c9b4bdffe4OoNEtXlTKf4an"
+  ],
+  "session_origins": {
+    "ses_268c9b4bdffe4OoNEtXlTKf4an": "direct"
+  },
+  "plan_name": "querydoctor-p1-redis",
+  "agent": "atlas"
+}
