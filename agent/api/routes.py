@@ -37,7 +37,7 @@ async def diagnose(request: DiagnoseRequest):
         }
 
         try:
-            async for chunk in compiled_graph.astream(init_state, version="v2"):
+            async for chunk in compiled_graph.astream(init_state):
                 yield f"data: {json.dumps(chunk)}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"

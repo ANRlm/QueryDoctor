@@ -6,10 +6,8 @@ from db.postgres_client import PostgresClient
 
 def collect_node(state: AgentState) -> AgentState:
     queries = state.get("queries", [])
-    if not queries:
-        return state
-
     collected = []
+
     for query in queries:
         info = collect_query_info(query)
         collected.append(info)

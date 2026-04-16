@@ -15,7 +15,12 @@ def generate_diagnosis(analyses: List[str], collected: List[Dict]) -> str:
     if not analyses:
         return "未能分析查询计划"
 
+    errors = []
     problems = []
+
+    for i, collected_item in enumerate(collected):
+        if collected_item.get("errors"):
+            errors.extend(collected_item["errors"])
 
     for i, analysis in enumerate(analyses):
         if "全表扫描" in analysis or "顺序扫描" in analysis:
@@ -28,6 +33,12 @@ def generate_diagnosis(analyses: List[str], collected: List[Dict]) -> str:
             problems.append(f"查询 {i + 1}: 存在排序操作")
         if "临时表" in analysis:
             problems.append(f"查询 {i + 1}: 使用临时表")
+
+    if errors:
+        error_summary = "\n".join(f"  - {e}" for e in errors[:3])
+        if len(errors) > 3:
+            error_summary += f"\n  - ... 还有 {len(errors) - 3} 个错误"
+        return f"诊断结论: 查询执行出错，无法完成诊断\n{error_summary}"
 
     if not problems:
         return "诊断结论: 查询计划正常，未发现明显性能问题"

@@ -69,7 +69,7 @@ async def process_diagnose(query: str):
     }
 
     result = {}
-    async for chunk in compiled_graph.astream(init_state, version="v2"):
+    async for chunk in compiled_graph.astream(init_state):
         result.update(chunk)
 
     return {"type": "diagnose_result", "data": result}

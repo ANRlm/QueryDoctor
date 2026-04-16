@@ -1,16 +1,25 @@
-from typing import List
+from typing import List, Dict, Any
 from engine.state import AgentState
 
 
 def suggest_node(state: AgentState) -> AgentState:
     analyses = state.get("analyses", [])
-    suggestions = generate_suggestions(analyses)
+    collected = state.get("collected", [])
+    suggestions = generate_suggestions(analyses, collected)
 
     return {**state, "suggestions": suggestions}
 
 
-def generate_suggestions(analyses: List[str]) -> List[str]:
+def generate_suggestions(
+    analyses: List[str], collected: List[Dict[str, Any]]
+) -> List[str]:
     suggestions = []
+
+    has_errors = any(item.get("errors") for item in collected)
+
+    if has_errors:
+        suggestions.append("建议: 请先解决上述数据库连接/执行错误")
+        return suggestions
 
     for analysis in analyses:
         if "全表扫描" in analysis or "顺序扫描" in analysis:
