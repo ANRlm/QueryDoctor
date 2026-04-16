@@ -1,6 +1,8 @@
 package server
 
 import (
+	"log"
+
 	"github.com/ANRlm/querydoctor/backend/internal/auth"
 	"github.com/ANRlm/querydoctor/backend/internal/cache"
 	"github.com/ANRlm/querydoctor/backend/internal/config"
@@ -20,7 +22,11 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	var cacheHandler *handler.CacheHandler
 	if cfg.Redis.Addr != "" {
 		qc := cache.NewQueryCache(cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.DB)
-		cacheHandler = handler.NewCacheHandler(qc)
+		if err := qc.Ping(); err != nil {
+			log.Printf("[WARN] Redis connection failed: %v. Cache routes disabled.", err)
+		} else {
+			cacheHandler = handler.NewCacheHandler(qc)
+		}
 	}
 
 	metricsHandler := handler.NewMetricsHandler()
