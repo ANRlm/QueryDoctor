@@ -8,7 +8,6 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="grid-bg" />
       <Navigation />
       <main>{children}</main>
       <footer className="border-t border-[#222] py-8">

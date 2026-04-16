@@ -11,7 +11,7 @@
   --color-text-tertiary: #666666;
   --font-display: 'Inter', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
-  --font-mono: 'Roboto Mono', ui-monospace, monospace;
+  --font-mono: ui-monospace, monospace;
 }
 
 * {
@@ -61,22 +61,4 @@ body {
 :focus-visible {
   outline: 1px solid #555;
   outline-offset: 2px;
-}
-
-.grid-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, black 70%, transparent 100%);
-}
-
-.grid-bg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse 60% 40% at 50% 50%, transparent 0%, #000 100%);
 }
