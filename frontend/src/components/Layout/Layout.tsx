@@ -7,21 +7,15 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+    <div className="min-h-screen bg-[#0a0a0a] text-white relative">
       <div 
         className="fixed inset-0 pointer-events-none"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
+            linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)
           `,
           backgroundSize: '60px 60px',
-        }}
-      />
-      <div 
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle at 50% 0%, rgba(0,0,0,0) 0%, #000 70%)',
         }}
       />
       <Navigation />
