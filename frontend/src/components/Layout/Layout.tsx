@@ -8,11 +8,12 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-black text-white">
+      <div className="grid-bg" />
       <Navigation />
       <main>{children}</main>
-      <footer className="border-t border-white/10 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-sm">
-          <p>QueryDoctor © 2024 - AI 数据库慢查询诊断 Agent</p>
+      <footer className="border-t border-[#222] py-8">
+        <div className="max-w-5xl mx-auto px-6 text-center text-[#666] text-xs">
+          <p>QueryDoctor © 2024</p>
         </div>
       </footer>
     </div>

@@ -2,6 +2,10 @@ import { motion } from 'framer-motion'
 import { Button } from '../ui/Button'
 
 export function Hero() {
+  const scrollToDiagnose = () => {
+    document.getElementById('diagnose')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   return (
     <section id="home" className="min-h-screen flex items-center justify-center px-6">
       <motion.div
@@ -19,7 +23,7 @@ export function Hero() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button size="lg" className="w-full sm:w-auto">
+          <Button size="lg" className="w-full sm:w-auto" onClick={scrollToDiagnose}>
             开始使用
           </Button>
           <Button variant="secondary" size="lg" className="w-full sm:w-auto">
