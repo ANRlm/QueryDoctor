@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import { Layout } from './components/Layout/Layout'
 import { Hero } from './components/Hero/Hero'
 import { DiagnosticsPage } from './features/diagnostics/DiagnosticsPage'
@@ -17,7 +17,6 @@ function App() {
     <Layout>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/diagnostics" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
   )
