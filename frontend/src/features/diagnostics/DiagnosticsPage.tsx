@@ -14,6 +14,58 @@ const dbTypes = [
   { value: 'redis', label: 'Redis' },
 ]
 
+function renderDiagnosis(text: string, type: string) {
+  if (type === 'analyze') {
+    const sepIdx = text.indexOf(': ')
+    if (sepIdx > 0) {
+      const prefix = text.slice(0, sepIdx)
+      const items = text.slice(sepIdx + 2).split('; ').filter(Boolean)
+      return (
+        <div>
+          <p className="text-xs text-[#666] mb-2">{prefix}</p>
+          <ul className="space-y-1.5">
+            {items.map((item, i) => (
+              <li key={i} className="flex gap-2 text-xs text-[#ccc]">
+                <span className="text-[#555] shrink-0">•</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+  }
+
+  if (type === 'diagnose') {
+    const lines = text.split('\n').filter(Boolean)
+    const noteLines: string[] = []
+    const bulletLines: string[] = []
+    for (const line of lines) {
+      if (line.startsWith('- ')) bulletLines.push(line.slice(2))
+      else noteLines.push(line)
+    }
+    return (
+      <div>
+        {noteLines.map((line, i) => (
+          <p key={i} className="text-xs text-[#888] mb-2">{line}</p>
+        ))}
+        {bulletLines.length > 0 && (
+          <ul className="space-y-1.5">
+            {bulletLines.map((item, i) => (
+              <li key={i} className="flex gap-2 text-xs text-[#ccc]">
+                <span className="text-[#555] shrink-0">•</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    )
+  }
+
+  return <p className="text-xs text-[#ccc]">{text}</p>
+}
+
 export function DiagnosticsPage() {
   const [query, setQuery] = useState('')
   const [selectedDb, setSelectedDb] = useState('mysql')
@@ -170,21 +222,20 @@ export function DiagnosticsPage() {
               {results.map((result, index) => (
                 <Card key={index} className="p-4">
                   {result.data.stage && (
-                    <div className="mb-2">
-                      <span className="text-xs text-[#888]">{result.data.stage}</span>
-                    </div>
+                    <p className="text-xs font-medium text-[#666] mb-3">{result.data.stage}</p>
                   )}
 
                   {result.data.diagnosis && (
-                    <div className="mb-2">
-                      <p className="text-sm text-[#ccc]">{result.data.diagnosis}</p>
-                    </div>
+                    <div>{renderDiagnosis(result.data.diagnosis, result.type)}</div>
                   )}
 
                   {result.data.suggestions && result.data.suggestions.length > 0 && (
-                    <ul className="space-y-1">
+                    <ul className="space-y-1.5">
                       {result.data.suggestions.map((s, i) => (
-                        <li key={i} className="text-xs text-[#888]">• {s}</li>
+                        <li key={i} className="flex gap-2 text-xs text-[#ccc]">
+                          <span className="text-[#555] shrink-0">•</span>
+                          <span>{s.startsWith('建议: ') ? s.slice(3) : s}</span>
+                        </li>
                       ))}
                     </ul>
                   )}
