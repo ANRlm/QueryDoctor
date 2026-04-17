@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
+from typing import Optional
 from pydantic import BaseModel
 
 from api.auth import login, register_user, get_current_user, TokenData
@@ -26,9 +27,18 @@ app = FastAPI(title="QueryDoctor Agent", lifespan=lifespan)
 app.include_router(rag_router)
 
 
+class DbConfig(BaseModel):
+    host: Optional[str] = None
+    port: Optional[int] = None
+    user: Optional[str] = None
+    password: Optional[str] = None
+    database: Optional[str] = None
+
+
 class DiagnoseRequest(BaseModel):
     query: str
     db_type: str = "postgresql"
+    db_config: Optional[DbConfig] = None
 
 
 @app.get("/health")
@@ -47,6 +57,7 @@ async def diagnose(request: DiagnoseRequest):
         init_state = {
             "queries": [request.query],
             "db_type": request.db_type,
+            "db_config": request.db_config.model_dump() if request.db_config else None,
             "analyses": [],
             "diagnosis": None,
             "suggestions": [],

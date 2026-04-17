@@ -2,10 +2,9 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../../components/ui/Button'
 import { Card, GlassCard } from '../../components/ui/Card'
-import { TextArea } from '../../components/ui/Input'
+import { TextArea, Input } from '../../components/ui/Input'
 import { useDiagnosticsStore } from '../../store/useDiagnosticsStore'
-import { createEventSource } from '../../services/apiClient'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ChevronDown, ChevronRight } from 'lucide-react'
 
 const dbTypes = [
   { value: 'mysql', label: 'MySQL' },
@@ -13,6 +12,14 @@ const dbTypes = [
   { value: 'mongodb', label: 'MongoDB' },
   { value: 'redis', label: 'Redis' },
 ]
+
+interface DbConfig {
+  host: string
+  port: string
+  user: string
+  password: string
+  database: string
+}
 
 function renderDiagnosis(text: string, type: string) {
   if (type === 'analyze') {
@@ -66,12 +73,60 @@ function renderDiagnosis(text: string, type: string) {
   return <p className="text-xs text-[#ccc]">{text}</p>
 }
 
+function startPostSSE(
+  url: string,
+  body: object,
+  onMessage: (data: Record<string, unknown>) => void,
+  onDone: () => void,
+): () => void {
+  const controller = new AbortController()
+  let done = false
+
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      const reader = res.body!.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+
+      while (true) {
+        const { done: rdDone, value } = await reader.read()
+        if (rdDone) break
+        buf += decoder.decode(value, { stream: true })
+        const lines = buf.split('\n')
+        buf = lines.pop() ?? ''
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          try {
+            const data = JSON.parse(line.slice(6)) as Record<string, unknown>
+            if (data.type === 'done') { onDone(); done = true; return }
+            onMessage(data)
+          } catch {}
+        }
+      }
+      if (!done) onDone()
+    })
+    .catch(() => { if (!done) onDone() })
+
+  return () => controller.abort()
+}
+
 export function DiagnosticsPage() {
   const [query, setQuery] = useState('')
   const [selectedDb, setSelectedDb] = useState('mysql')
   const [loading, setLoading] = useState(false)
+  const [showDbConfig, setShowDbConfig] = useState(false)
+  const [dbConfig, setDbConfig] = useState<DbConfig>({
+    host: '', port: '', user: '', password: '', database: '',
+  })
+  const [cancelFn, setCancelFn] = useState<(() => void) | null>(null)
   const { results, addResult, clearResults, setStreaming } = useDiagnosticsStore()
-  const [eventSource, setEventSource] = useState<EventSource | null>(null)
+
+  const hasDbConfig = dbConfig.host.trim() !== ''
 
   const handleDiagnose = () => {
     if (!query.trim()) return
@@ -80,10 +135,24 @@ export function DiagnosticsPage() {
     setLoading(true)
     setStreaming(true)
 
-    const url = `/api/diagnose?query=${encodeURIComponent(query)}&db_type=${selectedDb}`
+    const body: Record<string, unknown> = {
+      query,
+      db_type: selectedDb,
+    }
 
-    const es = createEventSource(
-      url,
+    if (hasDbConfig) {
+      body.db_config = {
+        host: dbConfig.host,
+        port: dbConfig.port ? parseInt(dbConfig.port) : undefined,
+        user: dbConfig.user || undefined,
+        password: dbConfig.password || undefined,
+        database: dbConfig.database || undefined,
+      }
+    }
+
+    const cancel = startPostSSE(
+      '/api/diagnose',
+      body,
       (chunk: Record<string, unknown>) => {
         if (chunk.analyze) {
           const { analyses } = chunk.analyze as { analyses: string[] }
@@ -120,14 +189,12 @@ export function DiagnosticsPage() {
       },
     )
 
-    setEventSource(es)
+    setCancelFn(() => cancel)
   }
 
   const handleStop = () => {
-    if (eventSource) {
-      eventSource.close()
-      setEventSource(null)
-    }
+    cancelFn?.()
+    setCancelFn(null)
     setLoading(false)
     setStreaming(false)
   }
@@ -171,6 +238,76 @@ export function DiagnosticsPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div>
+                <button
+                  onClick={() => setShowDbConfig(!showDbConfig)}
+                  className="flex items-center gap-1.5 text-xs text-[#666] hover:text-[#999] transition-colors"
+                >
+                  {showDbConfig ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                  连接到真实数据库（可选）
+                  {hasDbConfig && <span className="ml-1 text-[#4a9] text-[10px]">● 已配置</span>}
+                </button>
+
+                <AnimatePresence>
+                  {showDbConfig && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        <div className="col-span-2 sm:col-span-1">
+                          <label className="block text-[10px] text-[#666] mb-1">Host</label>
+                          <Input
+                            placeholder="localhost"
+                            value={dbConfig.host}
+                            onChange={(e) => setDbConfig({ ...dbConfig, host: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-[#666] mb-1">Port</label>
+                          <Input
+                            placeholder={selectedDb === 'mysql' ? '3306' : '5432'}
+                            value={dbConfig.port}
+                            onChange={(e) => setDbConfig({ ...dbConfig, port: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-[#666] mb-1">用户名</label>
+                          <Input
+                            placeholder="root"
+                            value={dbConfig.user}
+                            onChange={(e) => setDbConfig({ ...dbConfig, user: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-[#666] mb-1">密码</label>
+                          <Input
+                            type="password"
+                            placeholder="••••••"
+                            value={dbConfig.password}
+                            onChange={(e) => setDbConfig({ ...dbConfig, password: e.target.value })}
+                          />
+                        </div>
+                        <div className="col-span-2 sm:col-span-1">
+                          <label className="block text-[10px] text-[#666] mb-1">数据库名</label>
+                          <Input
+                            placeholder="mydb"
+                            value={dbConfig.database}
+                            onChange={(e) => setDbConfig({ ...dbConfig, database: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <p className="mt-2 text-[10px] text-[#555]">
+                        不填则使用静态 SQL 分析模式（无需数据库连接）
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               <div>
