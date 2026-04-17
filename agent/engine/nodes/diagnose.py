@@ -1,24 +1,64 @@
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+from openai import OpenAI
 from engine.state import AgentState
+from config import config
 
 
 def diagnose_node(state: AgentState) -> AgentState:
     analyses = state.get("analyses", [])
     collected = state.get("collected", [])
+    queries = state.get("queries", [])
 
-    diagnosis = generate_diagnosis(analyses, collected)
+    diagnosis = _llm_diagnose(queries, analyses) or _rule_diagnose(analyses, collected)
 
     return {**state, "diagnosis": diagnosis}
 
 
-def generate_diagnosis(analyses: List[str], collected: List[Dict]) -> str:
+def _llm_diagnose(queries: List[str], analyses: List[str]) -> Optional[str]:
+    if not config.OPENAI_API_KEY:
+        return None
+
+    queries_text = "\n".join(f"查询 {i + 1}: {q}" for i, q in enumerate(queries))
+    analysis_text = "\n".join(f"分析 {i + 1}: {a}" for i, a in enumerate(analyses))
+
+    prompt = f"""以下是需要诊断的 SQL 查询及其分析结果：
+
+SQL 查询：
+{queries_text}
+
+分析结果：
+{analysis_text}
+
+请基于以上分析，用 2-4 条简洁的要点给出诊断结论，指出主要性能问题。每条以 "- " 开头。"""
+
+    try:
+        client = OpenAI(api_key=config.OPENAI_API_KEY, base_url=config.OPENAI_BASE_URL)
+        response = client.chat.completions.create(
+            model=config.OPENAI_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "你是一个数据库性能优化专家，擅长分析 SQL 慢查询问题。请用中文回答，简洁专业。",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            max_tokens=500,
+        )
+        result = response.choices[0].message.content.strip()
+        return f"诊断结论（AI 分析）:\n{result}"
+    except Exception:
+        return None
+
+
+def _rule_diagnose(analyses: List[str], collected: List[Dict]) -> str:
     if not analyses:
         return "未能分析查询计划"
 
     errors = []
     problems = []
 
-    for i, collected_item in enumerate(collected):
+    for collected_item in collected:
         if collected_item.get("errors"):
             errors.extend(collected_item["errors"])
 

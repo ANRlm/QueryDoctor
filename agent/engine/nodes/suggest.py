@@ -1,18 +1,64 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from openai import OpenAI
 from engine.state import AgentState
+from config import config
 
 
 def suggest_node(state: AgentState) -> AgentState:
     analyses = state.get("analyses", [])
     collected = state.get("collected", [])
-    suggestions = generate_suggestions(analyses, collected)
+    queries = state.get("queries", [])
+    diagnosis = state.get("diagnosis", "")
+
+    suggestions = _llm_suggest(queries, analyses, diagnosis) or _rule_suggest(analyses, collected)
 
     return {**state, "suggestions": suggestions}
 
 
-def generate_suggestions(
-    analyses: List[str], collected: List[Dict[str, Any]]
-) -> List[str]:
+def _llm_suggest(
+    queries: List[str], analyses: List[str], diagnosis: str
+) -> Optional[List[str]]:
+    if not config.OPENAI_API_KEY:
+        return None
+
+    queries_text = "\n".join(f"查询 {i + 1}: {q}" for i, q in enumerate(queries))
+    analysis_text = "\n".join(f"分析 {i + 1}: {a}" for i, a in enumerate(analyses))
+
+    prompt = f"""以下是 SQL 查询的分析信息：
+
+SQL 查询：
+{queries_text}
+
+分析结果：
+{analysis_text}
+
+诊断结论：
+{diagnosis}
+
+请提供 3-6 条具体可操作的优化建议。每条建议独立成行，以 "建议: " 开头，包含具体的 SQL 改写示例或索引创建语句（如适用）。"""
+
+    try:
+        client = OpenAI(api_key=config.OPENAI_API_KEY, base_url=config.OPENAI_BASE_URL)
+        response = client.chat.completions.create(
+            model=config.OPENAI_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "你是一个数据库性能优化专家。请用中文提供具体可操作的优化建议，包含 SQL 示例。",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            max_tokens=800,
+        )
+        content = response.choices[0].message.content.strip()
+        lines = [line.strip() for line in content.split("\n") if line.strip()]
+        return lines if lines else None
+    except Exception:
+        return None
+
+
+def _rule_suggest(analyses: List[str], collected: List[Dict[str, Any]]) -> List[str]:
     suggestions = []
     has_errors = any(item.get("errors") for item in collected)
 
