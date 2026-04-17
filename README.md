@@ -140,7 +140,7 @@ docker compose up -d
 - `POST /auth/register` - 用户注册
 - `POST /auth/login` - 用户登录
 - `GET /auth/me` - 获取当前用户
-- `POST /diagnose` - 诊断查询
+- `POST /diagnose` - 诊断查询（支持 `db_config` 传入自定义数据库连接）
 - `WS /ws` - WebSocket 端点
 - `WS /ws/agent` - Agent WebSocket 端点
 - `POST /rag/index` - 索引诊断记录
