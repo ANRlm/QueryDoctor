@@ -24,6 +24,12 @@ def _llm_suggest(
     queries_text = "\n".join(f"查询 {i + 1}: {q}" for i, q in enumerate(queries))
     analysis_text = "\n".join(f"分析 {i + 1}: {a}" for i, a in enumerate(analyses))
 
+    rag_context = _retrieve_rag_context(queries[0] if queries else "")
+
+    rag_section = ""
+    if rag_context:
+        rag_section = f"\n\n历史参考案例：\n{rag_context}"
+
     prompt = f"""以下是 SQL 查询的分析信息：
 
 SQL 查询：
@@ -33,7 +39,7 @@ SQL 查询：
 {analysis_text}
 
 诊断结论：
-{diagnosis}
+{diagnosis}{rag_section}
 
 请提供 3-6 条具体可操作的优化建议。每条建议独立成行，以 "建议: " 开头，包含具体的 SQL 改写示例或索引创建语句（如适用）。"""
 
@@ -56,6 +62,17 @@ SQL 查询：
         return lines if lines else None
     except Exception:
         return None
+
+
+def _retrieve_rag_context(query: str) -> str:
+    if not query:
+        return ""
+    try:
+        from rag.retriever import DiagnosticRetriever
+        retriever = DiagnosticRetriever()
+        return retriever.retrieve_as_context(query, top_k=3)
+    except Exception:
+        return ""
 
 
 def _rule_suggest(analyses: List[str], collected: List[Dict[str, Any]]) -> List[str]:

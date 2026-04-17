@@ -83,6 +83,10 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      RAG_PERSIST_DIR: /data/vectorstore
+      RAG_COLLECTION: diagnostics
+    volumes:
+      - rag_data:/data/vectorstore
     depends_on:
       redis:
         condition: service_healthy
@@ -110,6 +114,7 @@ volumes:
   redis_data:
   mysql_data:
   postgres_data:
+  rag_data:
 
 networks:
   default:
