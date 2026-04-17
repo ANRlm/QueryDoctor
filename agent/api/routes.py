@@ -51,6 +51,16 @@ async def root():
     return {"message": "QueryDoctor Agent"}
 
 
+def _json_safe(obj):
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_json_safe(v) for v in obj]
+    if obj is None or isinstance(obj, (bool, int, float, str)):
+        return obj
+    return str(obj)
+
+
 @app.post("/diagnose")
 async def diagnose(request: DiagnoseRequest):
     async def event_stream():
@@ -65,7 +75,8 @@ async def diagnose(request: DiagnoseRequest):
 
         try:
             async for chunk in compiled_graph.astream(init_state):
-                yield f"data: {json.dumps(chunk)}\n\n"
+                safe_chunk = _json_safe(chunk)
+                yield f"data: {json.dumps(safe_chunk)}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
 

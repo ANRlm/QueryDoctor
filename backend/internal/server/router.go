@@ -36,12 +36,12 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 
 	router.POST("/api/auth/register", authHandler.Register)
 	router.POST("/api/auth/login", authHandler.Login)
+	router.POST("/api/diagnose", handler.Diagnose)
+	router.POST("/api/db/test", handler.TestDBConnection)
 
 	api := router.Group("/api")
 	api.Use(auth.AuthMiddleware())
 	{
-		api.POST("/diagnose", handler.Diagnose)
-		api.POST("/db/test", handler.TestDBConnection)
 		api.POST("/auth/refresh", authHandler.RefreshToken)
 		api.GET("/auth/me", authHandler.Me)
 
