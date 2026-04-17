@@ -3,14 +3,15 @@ from typing import List, Dict, Any
 
 
 class MySQLClient:
-    def __init__(self):
+    def __init__(self, db_config: Dict[str, Any] = None):
         import pymysql
+        cfg = db_config or {}
         self.connection = pymysql.connect(
-            host=os.getenv("MYSQL_HOST", "localhost"),
-            port=int(os.getenv("MYSQL_PORT", 3306)),
-            user=os.getenv("MYSQL_USER", "root"),
-            password=os.getenv("MYSQL_PASSWORD", "password"),
-            database=os.getenv("MYSQL_DATABASE", "querydoctor"),
+            host=cfg.get("host") or os.getenv("MYSQL_HOST", "localhost"),
+            port=int(cfg.get("port") or os.getenv("MYSQL_PORT", 3306)),
+            user=cfg.get("user") or os.getenv("MYSQL_USER", "root"),
+            password=cfg.get("password") or os.getenv("MYSQL_PASSWORD", "password"),
+            database=cfg.get("database") or os.getenv("MYSQL_DATABASE", "querydoctor"),
             cursorclass=pymysql.cursors.DictCursor,
         )
 

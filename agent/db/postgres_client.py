@@ -3,14 +3,15 @@ from typing import List, Dict, Any
 
 
 class PostgresClient:
-    def __init__(self):
+    def __init__(self, db_config: Dict[str, Any] = None):
         import psycopg2
+        cfg = db_config or {}
         self.connection = psycopg2.connect(
-            host=os.getenv("POSTGRES_HOST", "localhost"),
-            port=int(os.getenv("POSTGRES_PORT", 5432)),
-            user=os.getenv("POSTGRES_USER", "postgres"),
-            password=os.getenv("POSTGRES_PASSWORD", "password"),
-            database=os.getenv("POSTGRES_DB", "querydoctor"),
+            host=cfg.get("host") or os.getenv("POSTGRES_HOST", "localhost"),
+            port=int(cfg.get("port") or os.getenv("POSTGRES_PORT", 5432)),
+            user=cfg.get("user") or os.getenv("POSTGRES_USER", "postgres"),
+            password=cfg.get("password") or os.getenv("POSTGRES_PASSWORD", "password"),
+            database=cfg.get("database") or os.getenv("POSTGRES_DB", "querydoctor"),
         )
         self.connection.autocommit = True
 
