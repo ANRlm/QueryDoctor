@@ -1,6 +1,7 @@
 import json
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, WebSocket, Depends, Body
+from fastapi import FastAPI, WebSocket, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
@@ -9,7 +10,18 @@ from api.rag_api import router as rag_router
 from api.websocket import websocket_endpoint, agent_websocket_endpoint
 from engine.graph import compiled_graph
 
-app = FastAPI(title="QueryDoctor Agent")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        from db.users import init_users_table
+        init_users_table()
+    except Exception:
+        pass
+    yield
+
+
+app = FastAPI(title="QueryDoctor Agent", lifespan=lifespan)
 
 app.include_router(rag_router)
 
@@ -52,8 +64,8 @@ async def diagnose(request: DiagnoseRequest):
 
 
 @app.post("/auth/register")
-async def register(username: str, password: str, email: str = None):
-    user = register_user(username, password, email)
+async def register(username: str, password: str):
+    user = register_user(username, password)
     return {"user_id": user.user_id, "username": user.username}
 
 
