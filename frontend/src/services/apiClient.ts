@@ -67,3 +67,36 @@ export async function testDbConnection(config: {
   const response = await apiClient.post('/db/test', config)
   return response.data
 }
+
+export async function loginUser(
+  username: string,
+  password: string
+): Promise<{ token: string; username: string; user_id: string }> {
+  const response = await apiClient.post('/auth/login', { username, password })
+  return response.data
+}
+
+export async function registerUser(
+  username: string,
+  password: string
+): Promise<{ token: string; username: string; user_id: string }> {
+  const response = await apiClient.post('/auth/register', { username, password })
+  return response.data
+}
+
+apiClient.interceptors.request.use((config) => {
+  try {
+    const raw = localStorage.getItem('auth-storage')
+    if (raw) {
+      const parsed = JSON.parse(raw) as { state?: { token?: string } }
+      const token = parsed?.state?.token
+      if (token) {
+        config.headers = config.headers ?? {}
+        config.headers['Authorization'] = `Bearer ${token}`
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return config
+})

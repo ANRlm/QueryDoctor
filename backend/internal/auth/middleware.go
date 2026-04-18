@@ -32,7 +32,11 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		c.Set("user_id", claims.UserID)
-		c.Set("username", claims.Username)
+		username := claims.Username
+		if username == "" {
+			username = claims.Subject // Python tokens use "sub" field
+		}
+		c.Set("username", username)
 		c.Next()
 	}
 }
@@ -55,7 +59,11 @@ func OptionalAuthMiddleware() gin.HandlerFunc {
 		claims, err := ValidateToken(tokenString)
 		if err == nil {
 			c.Set("user_id", claims.UserID)
-			c.Set("username", claims.Username)
+			username := claims.Username
+			if username == "" {
+				username = claims.Subject // Python tokens use "sub" field
+			}
+			c.Set("username", username)
 		}
 		c.Next()
 	}

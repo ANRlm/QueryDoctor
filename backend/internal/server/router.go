@@ -38,6 +38,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	router.POST("/api/auth/login", authHandler.Login)
 	router.POST("/api/diagnose", handler.Diagnose)
 	router.POST("/api/db/test", handler.TestDBConnection)
+	router.Any("/api/rag/*path", handler.RagProxy)
 
 	api := router.Group("/api")
 	api.Use(auth.AuthMiddleware())
