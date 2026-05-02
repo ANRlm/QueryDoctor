@@ -45,6 +45,8 @@ htmlcov/
 # Project specific
 .sisyphus/
 *.log
+.env
+.claude/
 
 # Node (if frontend has package-lock.json conflicts)
 node_modules/
