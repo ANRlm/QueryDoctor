@@ -48,9 +48,10 @@ htmlcov/
 .env
 .claude/
 
-# Node (if frontend has package-lock.json conflicts)
+# Node
 node_modules/
 package-lock.json
+frontend/dist/
 
 # OS
 .DS_Store
